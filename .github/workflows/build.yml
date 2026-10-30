@@ -1,49 +1,22 @@
-name: Build Unity WebGL
+name: Generate Unity Activation File
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  build:
+  activation:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Reassemble and Extract Project Outside Repo
-        run: |
-          cat project_chunk_* > /tmp/ExportedProject.zip
-          mkdir -p /tmp/extracted_project
-          unzip -q /tmp/ExportedProject.zip -d /tmp/extracted_project
-          
-          # Find where ProjectSettings actually lives
-          PROJECT_DIR=$(find /tmp/extracted_project -type f -name "ProjectVersion.txt" -exec dirname {} \; | xargs dirname)
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          
-          # Initialize a dummy git repo so Game-CI git checks pass cleanly
-          git -C "$PROJECT_DIR" init
-          git -C "$PROJECT_DIR" config user.name "builder"
-          git -C "$PROJECT_DIR" config user.email "builder@ci.com"
-          git -C "$PROJECT_DIR" add .
-          git -C "$PROJECT_DIR" commit -m "Initialize dummy git repo for Game-CI"
+      - name: Request manual activation file
+        id: getManualLicenseFile
+        uses: game-ci/unity-request-activation-file@v2
 
-      - name: Build WebGL Project
-        uses: game-ci/unity-builder@v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          targetPlatform: WebGL
-          projectPath: ${{ env.PROJECT_DIR }}
-          buildName: WebGLBuild
-
-      - name: Upload WebGL Build Artifact
+      - name: Upload Activation Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WebGLBuild
-          path: build/WebGL
+          name: manual-activation-file
+          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
