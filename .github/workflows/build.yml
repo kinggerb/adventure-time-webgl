@@ -11,8 +11,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reassemble zip chunks
+      - name: Reassemble and Extract Project
         run: |
           cat project_chunk_* > ExportedProject.zip
           unzip -q ExportedProject.zip -d extracted_project
+
+      - name: List extracted project structure
+        run: |
           ls -la extracted_project
