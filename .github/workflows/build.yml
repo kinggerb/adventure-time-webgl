@@ -1,0 +1,18 @@
+name: Build Unity WebGL
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Reassemble zip chunks
+        run: |
+          cat project_chunk_* > ExportedProject.zip
+          unzip -q ExportedProject.zip -d extracted_project
+          ls -la extracted_project
