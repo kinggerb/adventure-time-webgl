@@ -16,6 +16,17 @@ jobs:
           cat project_chunk_* > ExportedProject.zip
           unzip -q ExportedProject.zip -d extracted_project
 
-      - name: List extracted project structure
-        run: |
-          ls -la extracted_project
+      - name: Build WebGL Project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: WebGL
+          projectPath: extracted_project
+          buildName: WebGLBuild
+
+      - name: Upload WebGL Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebGLBuild
+          path: build/WebGL
