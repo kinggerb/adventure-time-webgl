@@ -1,22 +1,50 @@
-name: Get Unity License File
+name: Build Unity WebGL
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  activation:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Request manual activation file
-        id: getManualLicenseFile
-        uses: game-ci/unity-request-activation-file@v3
-
-      - name: Upload Activation Artifact
-        uses: actions/upload-artifact@v4
         with:
-          name: manual-activation-file
-          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
+          fetch-depth: 0
+
+      - name: Reassemble and Extract Project Outside Repo
+        run: |
+          cat project_chunk_* > /tmp/ExportedProject.zip
+          mkdir -p /tmp/extracted_project
+          unzip -q /tmp/ExportedProject.zip -d /tmp/extracted_project
+          
+          # Find where ProjectSettings lives
+          PROJECT_DIR=$(find /tmp/extracted_project -type f -name "ProjectVersion.txt" -exec dirname {} \; | xargs dirname)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          
+          # Initialize dummy git repo
+          git -C "$PROJECT_DIR" init
+          git -C "$PROJECT_DIR" config user.name "builder"
+          git -C "$PROJECT_DIR" config user.email "builder@ci.com"
+          git -C "$PROJECT_DIR" add .
+          git -C "$PROJECT_DIR" commit -m "Initialize dummy git repo"
+
+      - name: Build WebGL Project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          targetPlatform: WebGL
+          projectPath: ${{ env.PROJECT_DIR }}
+          buildName: WebGLBuild
+
+      - name: Upload WebGL Build Artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: WebGLBuild
+          path: build/WebGL
