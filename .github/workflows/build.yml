@@ -28,16 +28,15 @@ jobs:
           git -C "$PROJECT_DIR" add .
           git -C "$PROJECT_DIR" commit -m "Initialize dummy git repo"
 
-      - name: Build WebGL Project
+      - name: Request Unity Activation License
         uses: game-ci/unity-builder@v4
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
         with:
           targetPlatform: WebGL
           projectPath: ${{ env.PROJECT_DIR }}
-          buildName: WebGLBuild
+          customParameters: -createManualActivationFile
 
       - name: Upload WebGL Build Artifact
         uses: actions/upload-artifact@v4
