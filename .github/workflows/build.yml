@@ -14,7 +14,13 @@ jobs:
       - name: Reassemble and Extract Project
         run: |
           cat project_chunk_* > ExportedProject.zip
+          mkdir -p extracted_project
           unzip -q ExportedProject.zip -d extracted_project
+          
+          # Find where ProjectSettings actually lives
+          PROJECT_DIR=$(find extracted_project -type f -name "ProjectVersion.txt" -exec dirname {} \; | xargs dirname)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          echo "Found project at: $PROJECT_DIR"
 
       - name: Build WebGL Project
         uses: game-ci/unity-builder@v4
@@ -22,7 +28,7 @@ jobs:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
           targetPlatform: WebGL
-          projectPath: extracted_project
+          projectPath: ${{ env.PROJECT_DIR }}
           buildName: WebGLBuild
 
       - name: Upload WebGL Build Artifact
