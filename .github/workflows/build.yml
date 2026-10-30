@@ -10,6 +10,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Reassemble and Extract Project Outside Repo
         run: |
@@ -20,7 +22,13 @@ jobs:
           # Find where ProjectSettings actually lives
           PROJECT_DIR=$(find /tmp/extracted_project -type f -name "ProjectVersion.txt" -exec dirname {} \; | xargs dirname)
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          echo "Found project at: $PROJECT_DIR"
+          
+          # Initialize a dummy git repo so Game-CI git checks pass cleanly
+          git -C "$PROJECT_DIR" init
+          git -C "$PROJECT_DIR" config user.name "builder"
+          git -C "$PROJECT_DIR" config user.email "builder@ci.com"
+          git -C "$PROJECT_DIR" add .
+          git -C "$PROJECT_DIR" commit -m "Initialize dummy git repo for Game-CI"
 
       - name: Build WebGL Project
         uses: game-ci/unity-builder@v4
